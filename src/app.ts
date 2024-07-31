@@ -1,5 +1,5 @@
 import express, { NextFunction, Request, Response } from 'express' //web框架
-import { server_port } from './env'
+import { server_port, api_prefix } from './env'
 import modList from './mod'
 import { consoleTime } from './utils/console'
 
@@ -10,7 +10,7 @@ app.use('/', express.static('web')) // 开放web文件夹目录
 
 // 加载模块
 modList.forEach(element => {
-  app.use('/myblog', element)
+  app.use('/' + api_prefix, element)
 })
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

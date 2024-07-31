@@ -11,13 +11,15 @@ router.get('/category', async (req, res) => {
   const list: Array<any> = await db.findAll({}, 'category_1')
   const typeList = await db.findAll({}, 'category_2')
   list.forEach(element => {
-    element.typeList = typeList.filter(i => i.parentId === i._id)
+    element.typeList = typeList.filter(i =>
+      db.getObjectId(element._id).equals(i.parentId),
+    )
   })
   success(res, list)
 })
 
 // 创建类别
-router.post('/category/create', authAdmin, async (req, res) => {
+router.post('/category', authAdmin, async (req, res) => {
   const parentId = req.body.parentId as string
   const type = req.body.type as number
   const name = req.body.name as string

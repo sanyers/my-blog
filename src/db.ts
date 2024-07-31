@@ -43,6 +43,13 @@ export class Database {
       : Promise.reject(null)
   }
 
+  // 更新数据
+  updates(where: any, update: any, tabName: string) {
+    return this.dbs
+      ? this.dbs.collection(tabName).updateOne(where, update)
+      : Promise.reject(null)
+  }
+
   findAll(where: any, tabName: string) {
     return this.dbs
       ? this.dbs.collection(tabName).find(where).toArray()
