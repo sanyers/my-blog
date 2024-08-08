@@ -28,7 +28,6 @@ router.get('/comment', async (req, res) => {
   const item = await db.find({ blogId }, tableName)
   if (item) {
     const list = item.comments.filter((i: any) => i.isShow)
-    console.log(list)
     success(res, list)
   } else {
     success(res, [])
@@ -97,17 +96,17 @@ router.post('/comment/verify', authAdmin, async (req, res) => {
   const isShow = req.body.isShow
   await db.update(
     { blogId, 'comments.id': commentId },
-    { $set: { 'comments.$.isShow': isShow } },
+    { 'comments.$.isShow': isShow },
     tableName,
   )
   success(res, 'ok')
 })
 
 // 删除评论
-router.get('/comment/delete', authAdmin, async (req, res) => {
+router.post('/comment/delete', authAdmin, async (req, res) => {
   const blogId = req.body.blogId
   const commentId = req.body.commentId
-  await db.update(
+  await db.updates(
     { blogId },
     { $pull: { comments: { id: commentId } } },
     tableName,

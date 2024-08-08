@@ -6,6 +6,7 @@ import { authAdmin } from '../auth'
 const router = express.Router()
 const db = new Database()
 const tableName = 'blog'
+const commentTableName = 'comments'
 
 // 根据ID获取博客
 router.get('/blog', async (req, res) => {
@@ -110,6 +111,26 @@ router.post('/blog/top', authAdmin, async (req, res) => {
   const id = req.body.id as string
   const isTop = req.body.isTop as string
   await db.update({ _id: db.getObjectId(id) }, { isTop }, tableName)
+  success(res, 'ok')
+})
+
+// 删除博客
+router.post('/blog/delete', authAdmin, async (req, res) => {
+  const id = req.body.id as string
+  const type1 = req.body.type1 as string
+  const type2 = req.body.type2 as string
+  if (id) {
+    const where = { _id: db.getObjectId(id) }
+    await db.delete(where, tableName)
+    await db.delete({ blogId: id }, commentTableName)
+  }
+  if (type1 && type2) {
+    const where = { type1, type2 }
+    const list = await db.findAll(where, tableName)
+    await db.deleteAll(where, tableName)
+    const blogId = list.map(i => i._id)
+    await db.deleteAll({ blogId: { $in: blogId } }, commentTableName)
+  }
   success(res, 'ok')
 })
 
