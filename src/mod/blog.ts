@@ -1,7 +1,7 @@
 import express from 'express'
 import { success, error } from '../res-code'
 import { Database } from '../db'
-import { authAdmin } from '../auth'
+import { authAdmin, auth } from '../auth'
 
 const router = express.Router()
 const db = new Database()
@@ -9,8 +9,13 @@ const tableName = 'blog'
 const commentTableName = 'comments'
 
 // 根据ID获取博客
-router.get('/blog', async (req, res) => {
+router.get('/blog', auth, async (req, res) => {
+  const userName = req.headers['_userName']
   const id = req.query.id as string
+  const where: any = { _id: db.getObjectId(id) }
+  if (!userName) {
+    where.release = true
+  }
   const item = await db.find({ _id: db.getObjectId(id) }, tableName)
   if (item) {
     success(res, item)
@@ -20,13 +25,21 @@ router.get('/blog', async (req, res) => {
 })
 
 // 搜索博客
-router.get('/blog/search', async (req, res) => {
+router.get('/blog/search', auth, async (req, res) => {
+  const userName = req.headers['_userName']
   const name = req.query.name as string
   const pageNum = Number((req.query.pageNum as string) || '1')
   const pageSize = Number((req.query.pageSize as string) || '10')
   const start = (pageNum - 1) * pageSize
-  const where = {
-    $or: [{ name: { $regex: name } }, { content: { $regex: name } }],
+  const where: any = {
+    $or: [
+      { name: { $regex: name } },
+      { content: { $regex: name } },
+      { desc: { $regex: name } },
+    ],
+  }
+  if (!userName) {
+    where.release = true
   }
   const sort = { _id: -1, utime: -1 }
   const list = await db.findLimit(where, tableName, sort, start, pageSize)
@@ -41,13 +54,17 @@ router.get('/blog/search', async (req, res) => {
 })
 
 // 按类别查询博客列表
-router.get('/blog/list', async (req, res) => {
+router.get('/blog/list', auth, async (req, res) => {
+  const userName = req.headers['_userName']
   const type1 = req.query.type1 as string
   const type2 = req.query.type2 as string
   const pageNum = Number((req.query.pageNum as string) || '1')
   const pageSize = Number((req.query.pageSize as string) || '10')
   const start = (pageNum - 1) * pageSize
-  const where = { type1, type2 }
+  const where: any = { type1, type2 }
+  if (!userName) {
+    where.release = true
+  }
   const sort = { _id: -1, utime: -1 }
   const list = await db.findLimit(where, tableName, sort, start, pageSize)
   const itemCount = await db.findCount(where, tableName)
@@ -61,18 +78,24 @@ router.get('/blog/list', async (req, res) => {
 })
 
 // 最近更新列表
-router.get('/blog/last', async (req, res) => {
+router.get('/blog/last', auth, async (req, res) => {
+  const userName = req.headers['_userName']
   const sort = { _id: -1, utime: -1 }
-  const list = await db.findLimit({}, tableName, sort, 1, 10)
+  const where: any = {}
+  if (!userName) {
+    where.release = true
+  }
+  const list = await db.findLimit(where, tableName, sort, 1, 10)
   success(res, list)
 })
 
 // 创建、更新博客
 router.post('/blog', authAdmin, async (req, res) => {
-  const id = req.body.id as string
+  let id = req.body.id as string
   const type1 = req.body.type1 as string
   const type2 = req.body.type2 as string
   const name = req.body.name as string
+  const desc = req.body.desc as string // 描述
   const author = (req.body.author as string) || 'sanyer' // 作者
   const authorLink = (req.body.author as string) || 'https://blog.sanyer.top'
   const content = req.body.content as string
@@ -90,19 +113,29 @@ router.post('/blog', authAdmin, async (req, res) => {
     data.author = author
     data.authorLink = authorLink
   }
+  if (desc) {
+    data.desc = desc
+  }
   if (id) {
     await db.update({ _id: db.getObjectId(id) }, data, tableName)
   } else {
     data.isTop = false
     data.ctime = nowTime
-    await db.insert(data, tableName)
+    data.release = false
+    const d = await db.insert(data, tableName)
+    id = d.insertedId.toString()
   }
-  success(res, 'ok')
+  success(res, id)
 })
 
 // 查询置顶博客
-router.get('/blog/top', async (req, res) => {
-  const list = await db.findAll({ isTop: true }, tableName)
+router.get('/blog/top', auth, async (req, res) => {
+  const userName = req.headers['_userName']
+  const where: any = { isTop: true }
+  if (!userName) {
+    where.release = true
+  }
+  const list = await db.findAll(where, tableName)
   success(res, list)
 })
 
@@ -131,6 +164,14 @@ router.post('/blog/delete', authAdmin, async (req, res) => {
     const blogId = list.map(i => i._id)
     await db.deleteAll({ blogId: { $in: blogId } }, commentTableName)
   }
+  success(res, 'ok')
+})
+
+// 发布与取消发布
+router.post('/blog/release', authAdmin, async (req, res) => {
+  const id = req.body.id as string
+  const release = req.body.release as boolean
+  await db.update({ _id: db.getObjectId(id) }, { release }, tableName)
   success(res, 'ok')
 })
 

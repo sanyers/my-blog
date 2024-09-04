@@ -7,6 +7,7 @@ import { TokenItem } from '../types/token'
 import { getNowAdd } from '../utils/date'
 import { admin_register } from '../env'
 import fs from 'fs'
+import { authAdmin } from '../auth'
 
 const router = express.Router()
 const db = new Database()
@@ -81,6 +82,13 @@ router.post('/user/register', async (req, res) => {
   } else {
     error(res, '当前未开放注册')
   }
+})
+
+// 获取登录信息
+router.get('/user/info', authAdmin, async (req, res) => {
+  const token = req.headers.authorization as string
+  const item = tokenList.get(token)
+  success(res, item)
 })
 
 export default router
