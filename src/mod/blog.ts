@@ -1,9 +1,13 @@
 import express from 'express'
+import multipart from 'connect-multiparty'
 import { success, error } from '../res-code'
 import { Database } from '../db'
 import { authAdmin, auth } from '../auth'
+import fs from 'fs'
+import { v4 } from 'uuid'
 
 const router = express.Router()
+const mp = multipart({ uploadDir: './temp' })
 const db = new Database()
 const tableName = 'blog'
 const commentTableName = 'comments'
@@ -78,14 +82,14 @@ router.get('/blog/list', auth, async (req, res) => {
 })
 
 // 最近更新列表
-router.get('/blog/last', auth, async (req, res) => {
+router.post('/blog/last', auth, async (req, res) => {
   const userName = req.headers['_userName']
-  const sort = { _id: -1, utime: -1 }
+  const sort = { utime: -1 }
   const where: any = {}
   if (!userName) {
     where.release = true
   }
-  const list = await db.findLimit(where, tableName, sort, 1, 10)
+  const list = await db.findLimit(where, tableName, sort, 0, 10)
   success(res, list)
 })
 
@@ -129,7 +133,7 @@ router.post('/blog', authAdmin, async (req, res) => {
 })
 
 // 查询置顶博客
-router.get('/blog/top', auth, async (req, res) => {
+router.post('/blog/top', auth, async (req, res) => {
   const userName = req.headers['_userName']
   const where: any = { isTop: true }
   if (!userName) {
@@ -173,6 +177,36 @@ router.post('/blog/release', authAdmin, async (req, res) => {
   const release = req.body.release as boolean
   await db.update({ _id: db.getObjectId(id) }, { release }, tableName)
   success(res, 'ok')
+})
+
+// 上传博客图片
+router.post('/blog/file', authAdmin, mp, async (req, res) => {
+  const id = req.body.id as string
+  const type1 = req.body.type1 as string
+  const type2 = req.body.type2 as string
+  const { file } = req.files
+  const newPath1 = `./web/${type1}`
+  try {
+    fs.mkdirSync(newPath1)
+  } catch (e) {}
+  const newPath2 = `${newPath1}/${type2}`
+  try {
+    fs.mkdirSync(newPath2)
+  } catch (e) {}
+  const newPath3 = `${newPath2}/${id}`
+  try {
+    fs.mkdirSync(newPath3)
+  } catch (e) {}
+
+  const list: Array<string> = []
+  file.forEach((item: any) => {
+    const fileName = v4() + '.' + item.name.split('.')[1]
+    const newPath = `${newPath3}/${fileName}`
+    fs.renameSync(item.path, newPath)
+    const url = `/imgs/${type1}/${type2}/${id}/${fileName}`
+    list.push(url)
+  })
+  success(res, list)
 })
 
 export default router

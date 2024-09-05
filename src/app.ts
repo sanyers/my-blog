@@ -6,7 +6,7 @@ import { consoleTime } from './utils/console'
 const app = express()
 app.use(express.json({ limit: '50mb' })) // 解析 application/json 参数
 app.use(express.urlencoded({ limit: '50mb', extended: true })) // 解析 www-form-urlencoded 参数
-app.use('/', express.static('web')) // 开放web文件夹目录
+app.use('/imgs', express.static('web')) // 开放web文件夹目录
 
 // 加载模块
 modList.forEach(element => {

@@ -1,7 +1,6 @@
 import express from 'express'
 import { success, error } from '../res-code'
 import { Database } from '../db'
-import fs from 'fs'
 import { auth, authAdmin } from '../auth'
 import { comment_verify } from '../env'
 
