@@ -1,6 +1,6 @@
 # 我的博客
 
-基于 Node.js + TypeScript + Express 快速搭轻量级建博客系统后台
+基于 Node.js + TypeScript + Express 快速搭建轻量级博客系统后台
 
 预览：[https://blog.sanyer.top/](https://blog.sanyer.top/)
 
