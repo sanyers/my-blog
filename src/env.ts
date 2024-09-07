@@ -15,3 +15,8 @@ export const comment_verify =
   process.env.comment_verify === 'true' ? true : false
 export const admin_register =
   process.env.admin_register === 'true' ? true : false
+
+export const user = {
+  author: process.env.author,
+  authorLink: process.env.authorLink,
+}

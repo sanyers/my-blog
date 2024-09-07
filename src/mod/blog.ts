@@ -5,6 +5,7 @@ import { Database } from '../db'
 import { authAdmin, auth } from '../auth'
 import fs from 'fs'
 import { v4 } from 'uuid'
+import { user } from '../env'
 
 const router = express.Router()
 const mp = multipart({ uploadDir: './temp' })
@@ -100,8 +101,8 @@ router.post('/blog', authAdmin, async (req, res) => {
   const type2 = req.body.type2 as string
   const name = req.body.name as string
   const desc = req.body.desc as string // 描述
-  const author = (req.body.author as string) || 'sanyer' // 作者
-  const authorLink = (req.body.author as string) || 'https://blog.sanyer.top'
+  const author = (req.body.author as string) || user.author // 作者
+  const authorLink = (req.body.author as string) || user.authorLink
   const content = req.body.content as string
 
   const nowTime = new Date().getTime()
