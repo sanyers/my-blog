@@ -30,6 +30,10 @@ function tokenInit() {
     } catch (e) {}
     global.tokenList = new Map()
   }
+
+  try {
+    fs.mkdirSync('temp')
+  } catch (e) {}
 }
 
 // 管理员登录

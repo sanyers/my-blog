@@ -70,7 +70,7 @@ router.get('/blog/list', auth, async (req, res) => {
   if (!userName) {
     where.release = true
   }
-  const sort = { _id: -1, utime: -1 }
+  const sort = { _id: 1, ctime: 1 }
   const list = await db.findLimit(where, tableName, sort, start, pageSize)
   const itemCount = await db.findCount(where, tableName)
   const pageCount = Math.ceil(itemCount / pageSize)
@@ -182,7 +182,6 @@ router.post('/blog/release', authAdmin, async (req, res) => {
 
 // 上传博客图片
 router.post('/blog/file', authAdmin, mp, async (req, res) => {
-  const id = req.body.id as string
   const type1 = req.body.type1 as string
   const type2 = req.body.type2 as string
   const { file } = req.files
@@ -194,19 +193,23 @@ router.post('/blog/file', authAdmin, mp, async (req, res) => {
   try {
     fs.mkdirSync(newPath2)
   } catch (e) {}
-  const newPath3 = `${newPath2}/${id}`
-  try {
-    fs.mkdirSync(newPath3)
-  } catch (e) {}
 
   const list: Array<string> = []
-  file.forEach((item: any) => {
-    const fileName = v4() + '.' + item.name.split('.')[1]
-    const newPath = `${newPath3}/${fileName}`
-    fs.renameSync(item.path, newPath)
-    const url = `/imgs/${type1}/${type2}/${id}/${fileName}`
+  if (Array.isArray(file)) {
+    file.forEach((item: any) => {
+      const fileName = v4() + '.' + item.name.split('.')[1]
+      const newPath = `${newPath2}/${fileName}`
+      fs.renameSync(item.path, newPath)
+      const url = `/imgs/${type1}/${type2}/${fileName}`
+      list.push(url)
+    })
+  } else {
+    const fileName = v4() + '.' + file.name.split('.')[1]
+    const newPath = `${newPath2}/${fileName}`
+    fs.renameSync(file.path, newPath)
+    const url = `/imgs/${type1}/${type2}/${fileName}`
     list.push(url)
-  })
+  }
   success(res, list)
 })
 
